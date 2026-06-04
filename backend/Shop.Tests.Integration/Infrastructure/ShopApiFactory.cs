@@ -29,6 +29,10 @@ public class ShopApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
+        db.CartItems.RemoveRange(db.CartItems);
+        db.Carts.RemoveRange(db.Carts);
+        db.OrderItems.RemoveRange(db.OrderItems);
+        db.Orders.RemoveRange(db.Orders);
         db.Products.RemoveRange(db.Products);
         await db.SaveChangesAsync();
     }
