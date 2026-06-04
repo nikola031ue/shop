@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shop.Application.Products.Commands.CreateProduct;
 using Shop.Application.Products.Commands.DeleteProduct;
@@ -30,7 +31,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
         return product is null ? NotFound() : Ok(product);
     }
 
-    // TODO: [Authorize(Roles = "Admin")] — dodati kada se implementira autentifikacija
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand command, CancellationToken cancellationToken)
     {
@@ -38,7 +39,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
 
-    // TODO: [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProductCommand command, CancellationToken cancellationToken)
     {
@@ -49,7 +50,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
-    // TODO: [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {

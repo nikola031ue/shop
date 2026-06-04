@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shop.Application.Orders.Commands.CreateOrder;
 using Shop.Application.Orders.Commands.UpdateOrderStatus;
@@ -12,7 +13,7 @@ namespace Shop.Api.Controllers;
 [Route("api/[controller]")]
 public class OrdersController(IMediator mediator) : ControllerBase
 {
-    // TODO: [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
@@ -47,7 +48,7 @@ public class OrdersController(IMediator mediator) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = orderId }, new { orderId });
     }
 
-    // TODO: [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
     {
