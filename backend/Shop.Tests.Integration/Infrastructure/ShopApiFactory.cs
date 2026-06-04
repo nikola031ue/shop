@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -20,9 +22,21 @@ public class ShopApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString()
+                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString(),
+                ["Jwt:SecretKey"] = "test-secret-key-min-32-characters-long!!",
+                ["Admin:Username"] = "admin",
+                ["Admin:Password"] = "Admin123!"
             });
         });
+    }
+
+    public async Task<string> GetAdminTokenAsync()
+    {
+        using var client = CreateClient();
+        var response = await client.PostAsJsonAsync("/api/auth/login",
+            new { username = "admin", password = "Admin123!" });
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("accessToken").GetString()!;
     }
 
     public async Task ResetDatabaseAsync()
@@ -38,6 +52,5 @@ public class ShopApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     }
 
     public async Task InitializeAsync() => await _postgres.StartAsync();
-
     public new async Task DisposeAsync() => await _postgres.DisposeAsync();
 }

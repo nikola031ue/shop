@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
@@ -11,7 +12,13 @@ public class OrderApiTests(ShopApiFactory factory) : IClassFixture<ShopApiFactor
     private readonly HttpClient _client = factory.CreateClient();
     private readonly Guid _sessionId = Guid.NewGuid();
 
-    public Task InitializeAsync() => factory.ResetDatabaseAsync();
+    public async Task InitializeAsync()
+    {
+        await factory.ResetDatabaseAsync();
+        var token = await factory.GetAdminTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]

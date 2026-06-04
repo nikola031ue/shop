@@ -10,5 +10,6 @@ public interface IShopDbContext
     DbSet<CartItem> CartItems { get; }
     DbSet<Order> Orders { get; }
     DbSet<OrderItem> OrderItems { get; }
+    DbSet<AdminUser> AdminUsers { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
