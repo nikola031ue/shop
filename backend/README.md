@@ -73,15 +73,54 @@ docker compose down -v
 
 ## Migracije baze podataka
 
-```bash
-# Kreiranje nove migracije
-dotnet ef migrations add <NazivMigracije> --project Shop.Infrastructure --startup-project Shop.Api
+### Automatska primjena
 
-# Primjena migracija
-dotnet ef database update --project Shop.Infrastructure --startup-project Shop.Api
+Migracije se **automatski primjenjuju pri svakom pokretanju aplikacije** — nema potrebe da ih ručno pokrećeš za lokalni razvoj ili deployment. Seed podaci (admin korisnik i test proizvodi) se dodaju samo ako baza još uvijek prazna.
+
+### Kada kreirati novu migraciju
+
+Novu migraciju treba kreirati kada se **promijeni model domene** — dodavanje entiteta, kolone, indeksa ili promjena ograničenja:
+
+```bash
+# Instalacija dotnet-ef alata (jednom, globalno)
+dotnet tool install --global dotnet-ef
+
+# Kreiranje nove migracije (izvršiti iz backend/ foldera)
+dotnet ef migrations add <NazivMigracije> \
+  --project Shop.Infrastructure \
+  --startup-project Shop.Api \
+  --output-dir Persistence/Migrations
 ```
 
-Connection string (lokalni razvoj):
+Primjeri naziva migracija: `AddProductCategory`, `AddOrderShippingAddress`, `RenameStockToQuantity`.
+
+Migracije se čuvaju u `Shop.Infrastructure/Persistence/Migrations/` i trebaju biti commitovane u repozitorijum.
+
+### Ručna primjena (opcionalno)
+
+Ako iz nekog razloga treba ručno primijeniti migracije na bazu (npr. debugging):
+
+```bash
+dotnet ef database update \
+  --project Shop.Infrastructure \
+  --startup-project Shop.Api
+```
+
+### Rollback migracije
+
+```bash
+# Vraćanje na određenu migraciju (po imenu)
+dotnet ef database update <NazivPrethodneMigracije> \
+  --project Shop.Infrastructure \
+  --startup-project Shop.Api
+
+# Brisanje posljednje neprimijenjene migracije (samo ako nije u bazi)
+dotnet ef migrations remove \
+  --project Shop.Infrastructure \
+  --startup-project Shop.Api
+```
+
+### Connection string (lokalni razvoj)
 
 ```
 Host=localhost;Port=5432;Database=shopdb;Username=shop;Password=shop123
