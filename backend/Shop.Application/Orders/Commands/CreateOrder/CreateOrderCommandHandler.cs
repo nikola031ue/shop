@@ -9,19 +9,17 @@ public class CreateOrderCommandHandler(IShopDbContext db) : IRequestHandler<Crea
 {
     public async Task<Guid?> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
-        var cart = await db.Carts
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.Id == request.SessionId, cancellationToken);
+        var cartItems = await db.CartItems
+            .Where(i => i.CartId == request.SessionId)
+            .ToListAsync(cancellationToken);
 
-        if (cart is null || cart.Items.Count == 0)
-            return null;
+        if (cartItems.Count == 0) return null;
 
-        var order = Order.Create(request.SessionId, cart.Items, request.TransactionHash, request.WalletAddress);
+        var order = Order.Create(request.SessionId, cartItems, request.TransactionHash, request.WalletAddress);
         db.Orders.Add(order);
+        db.CartItems.RemoveRange(cartItems);
 
-        cart.Clear();
         await db.SaveChangesAsync(cancellationToken);
-
         return order.Id;
     }
 }

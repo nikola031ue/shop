@@ -12,22 +12,27 @@ public class AddCartItemCommandHandler(IShopDbContext db) : IRequestHandler<AddC
         var product = await db.Products
             .FirstOrDefaultAsync(p => p.Id == request.ProductId, cancellationToken);
 
-        if (product is null)
-            return null;
+        if (product is null) return null;
 
-        var cart = await db.Carts
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.Id == request.SessionId, cancellationToken);
-
-        if (cart is null)
+        if (!await db.Carts.AnyAsync(c => c.Id == request.SessionId, cancellationToken))
         {
-            cart = Cart.Create(request.SessionId);
-            db.Carts.Add(cart);
+            db.Carts.Add(Cart.Create(request.SessionId));
+            await db.SaveChangesAsync(cancellationToken);
         }
 
-        var cartItem = cart.AddOrUpdateItem(product.Id, product.Name, product.Price, request.Quantity);
-        await db.SaveChangesAsync(cancellationToken);
+        var existing = await db.CartItems
+            .FirstOrDefaultAsync(i => i.CartId == request.SessionId && i.ProductId == request.ProductId, cancellationToken);
 
+        if (existing is not null)
+        {
+            existing.UpdateQuantity(existing.Quantity + request.Quantity);
+            await db.SaveChangesAsync(cancellationToken);
+            return existing.Id;
+        }
+
+        var cartItem = CartItem.Create(request.SessionId, product.Id, product.Name, product.Price, request.Quantity);
+        db.CartItems.Add(cartItem);
+        await db.SaveChangesAsync(cancellationToken);
         return cartItem.Id;
     }
 }

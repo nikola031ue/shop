@@ -2,9 +2,12 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProductsPage } from './ProductsPage'
+import { CartProvider } from '../context/CartContext'
 import * as productsApi from '../api/products'
+import * as cartApi from '../api/cart'
 
 vi.mock('../api/products')
+vi.mock('../api/cart')
 
 const mockProducts = (overrides: Partial<Parameters<typeof productsApi.getProducts>[0]> = {}) => {
   const items = [
@@ -19,7 +22,9 @@ function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
-      <ProductsPage />
+      <CartProvider>
+        <ProductsPage />
+      </CartProvider>
     </QueryClientProvider>,
   )
 }
@@ -27,6 +32,7 @@ function renderPage() {
 describe('ProductsPage', () => {
   beforeEach(() => {
     vi.mocked(productsApi.getProducts).mockImplementation(mockProducts)
+    vi.mocked(cartApi.getCart).mockResolvedValue({ sessionId: 'test', items: [], total: 0 })
   })
 
   afterEach(() => vi.clearAllMocks())

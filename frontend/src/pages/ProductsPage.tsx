@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getProducts } from '../api/products'
+import { getCart } from '../api/cart'
 import { ProductCard } from '../components/ProductCard'
 import { SearchBar } from '../components/SearchBar'
 import { Pagination } from '../components/Pagination'
 import { useDebounce } from '../hooks/useDebounce'
+import { useCart } from '../context/CartContext'
 
 const PAGE_SIZE = 12
 
 export function ProductsPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const { openCart } = useCart()
 
   const debouncedSearch = useDebounce(search, 400)
 
@@ -19,6 +22,14 @@ export function ProductsPage() {
     queryFn: () => getProducts({ search: debouncedSearch || undefined, page, pageSize: PAGE_SIZE }),
     placeholderData: (prev) => prev,
   })
+
+  const { data: cart } = useQuery({
+    queryKey: ['cart'],
+    queryFn: getCart,
+    staleTime: 0,
+  })
+
+  const cartCount = cart?.items.reduce((sum, i) => sum + i.quantity, 0) ?? 0
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -30,9 +41,30 @@ export function ProductsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
           <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">🛒 Shop</h1>
-          <SearchBar value={search} onChange={handleSearchChange} />
+          <div className="flex-1">
+            <SearchBar value={search} onChange={handleSearchChange} />
+          </div>
+          <button
+            onClick={openCart}
+            className="relative p-2 text-gray-600 hover:text-indigo-600 transition-colors"
+            aria-label={`Otvori korpu${cartCount > 0 ? `, ${cartCount} artikala` : ''}`}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-600 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 

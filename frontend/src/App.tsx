@@ -1,5 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { CartProvider } from './context/CartContext'
+import { CartDrawer } from './components/CartDrawer'
 import { ProductsPage } from './pages/ProductsPage'
 
 const queryClient = new QueryClient({
@@ -11,11 +13,14 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<ProductsPage />} />
-        </Routes>
-      </BrowserRouter>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<ProductsPage />} />
+          </Routes>
+          <CartDrawer />
+        </BrowserRouter>
+      </CartProvider>
     </QueryClientProvider>
   )
 }
