@@ -39,6 +39,40 @@ Aplikacija je dostupna na: `http://localhost:3000`
 
 Dev server automatski prosljeđuje `/api/*` zahtjeve na `http://localhost:5000`.
 
+## Pokretanje testova
+
+```bash
+# Watch mode — pokreće se pri svakom snimanju fajla (za razvoj)
+npm test
+
+# Jednokratno pokretanje — kao na CI
+npm run test:run
+
+# Interaktivni UI u browseru
+npm run test:ui
+```
+
+### Šta se testira
+
+| Fajl | Šta pokriva |
+|------|-------------|
+| `src/hooks/useDebounce.test.ts` | Debounce logika — timing, cancel međuvrijednosti |
+| `src/components/SearchBar.test.tsx` | Unos teksta, clear dugme |
+| `src/components/Pagination.test.tsx` | Render uslovi, disabled stanje, klikovi, ellipsis |
+| `src/pages/ProductsPage.test.tsx` | Prikaz proizvoda, debounced search, empty/error state, paginacija |
+
+### Struktura testa
+
+Testovi koriste [Vitest](https://vitest.dev/) + [Testing Library](https://testing-library.com/). API pozivi se mockuju sa `vi.mock()` — nije potreban pokrenut backend.
+
+```bash
+# Pokretanje samo jednog fajla
+npm run test:run -- src/components/Pagination.test.tsx
+
+# Pokretanje testova koji odgovaraju pattern-u
+npm run test:run -- --reporter=verbose SearchBar
+```
+
 ## Ostale komande
 
 ```bash
@@ -48,11 +82,8 @@ npm run build
 # Preview production builda lokalno
 npm run preview
 
-# Pokretanje testova (watch mode)
-npm test
-
-# Pokretanje testova (jednokratno, za CI)
-npm run test:run
+# TypeScript provjera bez build-a
+npx tsc --noEmit
 
 # Linting
 npm run lint
