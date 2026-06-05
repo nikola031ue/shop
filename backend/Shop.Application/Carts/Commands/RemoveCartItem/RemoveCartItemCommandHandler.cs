@@ -8,15 +8,12 @@ public class RemoveCartItemCommandHandler(IShopDbContext db) : IRequestHandler<R
 {
     public async Task<bool> Handle(RemoveCartItemCommand request, CancellationToken cancellationToken)
     {
-        var cart = await db.Carts
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.Id == request.SessionId, cancellationToken);
+        var item = await db.CartItems
+            .FirstOrDefaultAsync(i => i.Id == request.CartItemId && i.CartId == request.SessionId, cancellationToken);
 
-        if (cart is null) return false;
+        if (item is null) return false;
 
-        var removed = cart.RemoveItem(request.CartItemId);
-        if (!removed) return false;
-
+        db.CartItems.Remove(item);
         await db.SaveChangesAsync(cancellationToken);
         return true;
     }

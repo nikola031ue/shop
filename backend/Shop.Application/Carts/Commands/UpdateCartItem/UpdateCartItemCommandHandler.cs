@@ -8,17 +8,13 @@ public class UpdateCartItemCommandHandler(IShopDbContext db) : IRequestHandler<U
 {
     public async Task<bool> Handle(UpdateCartItemCommand request, CancellationToken cancellationToken)
     {
-        var cart = await db.Carts
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.Id == request.SessionId, cancellationToken);
+        var item = await db.CartItems
+            .FirstOrDefaultAsync(i => i.Id == request.CartItemId && i.CartId == request.SessionId, cancellationToken);
 
-        if (cart is null) return false;
-
-        var item = cart.Items.FirstOrDefault(i => i.Id == request.CartItemId);
         if (item is null) return false;
 
         if (request.Quantity <= 0)
-            cart.RemoveItem(request.CartItemId);
+            db.CartItems.Remove(item);
         else
             item.UpdateQuantity(request.Quantity);
 

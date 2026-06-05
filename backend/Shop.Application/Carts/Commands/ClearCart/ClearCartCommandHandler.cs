@@ -8,13 +8,13 @@ public class ClearCartCommandHandler(IShopDbContext db) : IRequestHandler<ClearC
 {
     public async Task Handle(ClearCartCommand request, CancellationToken cancellationToken)
     {
-        var cart = await db.Carts
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.Id == request.SessionId, cancellationToken);
+        var items = await db.CartItems
+            .Where(i => i.CartId == request.SessionId)
+            .ToListAsync(cancellationToken);
 
-        if (cart is null) return;
+        if (items.Count == 0) return;
 
-        cart.Clear();
+        db.CartItems.RemoveRange(items);
         await db.SaveChangesAsync(cancellationToken);
     }
 }
