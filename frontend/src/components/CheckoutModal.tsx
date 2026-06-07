@@ -10,56 +10,61 @@ interface Props {
   onSuccess: () => void
 }
 
-type Step = 'idle' | 'sending' | 'success'
-
 // $1 USD = 0.00001 ETH (isti kurs kao u hooku)
 const USD_TO_ETH = 0.00001
+
+type Step =
+  | { name: 'idle' }
+  | { name: 'sending' }
+  | { name: 'pending'; txHash: string }
+  | { name: 'success'; txHash: string; orderId: string }
 
 export function CheckoutModal({ total, onClose, onSuccess }: Props) {
   const { isInstalled, account, ethBalance, isConnecting, error, connect, sendEth } =
     useMetaMask()
-  const [step, setStep] = useState<Step>('idle')
-  const [txHash, setTxHash] = useState('')
+  const [step, setStep] = useState<Step>({ name: 'idle' })
   const [txError, setTxError] = useState('')
   const queryClient = useQueryClient()
 
   const orderMutation = useMutation({
     mutationFn: ({ hash, wallet }: { hash: string; wallet: string }) =>
       createOrder(hash, wallet),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] })
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
   })
 
   async function handlePay() {
     setTxError('')
-    setStep('sending')
+    setStep({ name: 'sending' })
     try {
-      const { txHash: hash, walletAddress } = await sendEth(SHOP_WALLET_ADDRESS, total)
-      setTxHash(hash)
-      await orderMutation.mutateAsync({ hash, wallet: walletAddress })
-      setStep('success')
-      setTimeout(onSuccess, 2500)
+      const { txHash, walletAddress } = await sendEth(
+        SHOP_WALLET_ADDRESS,
+        total,
+        (hash) => {
+          // MetaMask je potvrdio - tx je na mreži, čekamo blok
+          setStep({ name: 'pending', txHash: hash })
+        },
+      )
+
+      const { orderId } = await orderMutation.mutateAsync({ hash: txHash, wallet: walletAddress })
+      setStep({ name: 'success', txHash, orderId })
     } catch (err: unknown) {
-      setStep('idle')
-      if ((err as { code?: number }).code === 4001) {
-        setTxError('Odbio si transakciju u MetaMask-u.')
+      setStep({ name: 'idle' })
+      const code = (err as { code?: unknown }).code
+      if (code === 4001 || code === 'ACTION_REJECTED') {
+        setTxError('Transakcija odbijena - klikni "Confirm" u MetaMask-u da završiš plaćanje.')
       } else {
-        setTxError(err instanceof Error ? err.message : 'Transakcija nije uspjela.')
+        setTxError('Plaćanje nije uspjelo. Pokušaj ponovo.')
       }
     }
   }
 
-  function shortenAddress(addr: string) {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
-  }
-
   const ethAmount = (total * USD_TO_ETH).toFixed(6)
+  const isBusy = step.name === 'sending' || step.name === 'pending'
 
   return (
     <div
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onClick={isBusy ? undefined : onClose}
     >
       <div
         className="bg-white rounded-2xl shadow-xl w-full max-w-sm"
@@ -68,7 +73,7 @@ export function CheckoutModal({ total, onClose, onSuccess }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-900">Plaćanje</h2>
-          {step !== 'sending' && (
+          {!isBusy && step.name !== 'success' && (
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -82,37 +87,88 @@ export function CheckoutModal({ total, onClose, onSuccess }: Props) {
         </div>
 
         <div className="px-6 py-5 space-y-5">
-          {/* Ukupno */}
-          <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Ukupno</span>
-              <span className="text-xl font-bold text-gray-900">${total.toFixed(2)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400">≈ ETH (Sepolia testnet)</span>
-              <span className="text-sm font-medium text-indigo-600">{ethAmount} ETH</span>
-            </div>
-          </div>
 
-          {/* Success */}
-          {step === 'success' && (
-            <div className="text-center py-4 space-y-2">
-              <div className="text-4xl">✅</div>
-              <p className="font-semibold text-gray-900">Plaćanje uspješno!</p>
-              <p className="text-xs text-gray-400 break-all">{txHash}</p>
-              <p className="text-sm text-gray-500">Porudžbina je kreirana.</p>
+          {/* ── SUCCESS ── */}
+          {step.name === 'success' && (
+            <div className="text-center space-y-4 py-2">
+              <div className="text-5xl">✅</div>
+              <div>
+                <p className="font-bold text-gray-900 text-lg">Plaćanje uspješno!</p>
+                <p className="text-sm text-gray-500 mt-1">Tvoja porudžbina je kreirana.</p>
+              </div>
+
+              <div className="bg-indigo-50 rounded-xl px-4 py-3 text-left space-y-1">
+                <p className="text-xs text-gray-500">Broj porudžbine</p>
+                <p className="font-mono text-sm font-semibold text-indigo-700 break-all">
+                  {step.orderId}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl px-4 py-3 text-left space-y-1">
+                <p className="text-xs text-gray-500">Transakcija (Sepolia)</p>
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${step.txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-xs text-indigo-600 hover:underline break-all"
+                >
+                  {step.txHash.slice(0, 20)}...{step.txHash.slice(-8)}
+                </a>
+              </div>
+
+              <button
+                onClick={onSuccess}
+                className="w-full py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
+              >
+                Zatvori
+              </button>
             </div>
           )}
 
-          {step !== 'success' && (
+          {/* ── PENDING (čekanje potvrde bloka) ── */}
+          {step.name === 'pending' && (
+            <div className="text-center space-y-4 py-2">
+              <div className="flex justify-center">
+                <div className="w-14 h-14 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Čekanje potvrde...</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Transakcija je poslana, čekamo potvrdu na Sepolia mreži (~12s).
+                </p>
+              </div>
+              <a
+                href={`https://sepolia.etherscan.io/tx/${step.txHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="block text-xs text-indigo-500 hover:underline break-all"
+              >
+                Prati na Etherscan ↗
+              </a>
+            </div>
+          )}
+
+          {/* ── IDLE / SENDING ── */}
+          {(step.name === 'idle' || step.name === 'sending') && (
             <>
+              {/* Ukupno */}
+              <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Ukupno</span>
+                  <span className="text-xl font-bold text-gray-900">${total.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">≈ ETH (Sepolia testnet)</span>
+                  <span className="text-sm font-medium text-indigo-600">{ethAmount} ETH</span>
+                </div>
+              </div>
+
               {isInstalled ? (
                 account ? (
-                  /* Povezan, spreman za plaćanje */
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 bg-green-50 text-green-700 rounded-lg px-3 py-2 text-sm">
                       <span className="w-2 h-2 bg-green-500 rounded-full shrink-0" />
-                      <span className="font-medium">{shortenAddress(account)}</span>
+                      <span className="font-medium">{account.slice(0, 6)}...{account.slice(-4)}</span>
                       <span className="text-green-500 ml-auto">Sepolia</span>
                     </div>
 
@@ -128,10 +184,10 @@ export function CheckoutModal({ total, onClose, onSuccess }: Props) {
 
                     <button
                       onClick={handlePay}
-                      disabled={step === 'sending'}
+                      disabled={step.name === 'sending'}
                       className="w-full py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                     >
-                      {step === 'sending' ? (
+                      {step.name === 'sending' ? (
                         <>
                           <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -145,7 +201,6 @@ export function CheckoutModal({ total, onClose, onSuccess }: Props) {
                     </button>
                   </div>
                 ) : (
-                  /* MetaMask instaliran, nije povezan */
                   <div className="space-y-3">
                     {error && (
                       <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
@@ -161,18 +216,12 @@ export function CheckoutModal({ total, onClose, onSuccess }: Props) {
                   </div>
                 )
               ) : (
-                /* MetaMask nije instaliran */
                 <div className="space-y-3">
                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 space-y-1">
                     <p className="font-medium">MetaMask nije instaliran</p>
                     <p className="text-xs">
                       Instaliraj{' '}
-                      <a
-                        href="https://metamask.io/download/"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline"
-                      >
+                      <a href="https://metamask.io/download/" target="_blank" rel="noreferrer" className="underline">
                         MetaMask ekstenziju
                       </a>{' '}
                       ili pošalji ETH ručno:
@@ -180,12 +229,8 @@ export function CheckoutModal({ total, onClose, onSuccess }: Props) {
                   </div>
                   <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-1">
                     <p className="text-xs text-gray-500">Wallet adresa prodavnice (Sepolia)</p>
-                    <p className="text-xs font-mono text-gray-800 break-all select-all">
-                      {SHOP_WALLET_ADDRESS}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Iznos: <span className="font-medium">{ethAmount} ETH</span>
-                    </p>
+                    <p className="text-xs font-mono text-gray-800 break-all select-all">{SHOP_WALLET_ADDRESS}</p>
+                    <p className="text-xs text-gray-500 mt-1">Iznos: <span className="font-medium">{ethAmount} ETH</span></p>
                   </div>
                 </div>
               )}

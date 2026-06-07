@@ -43,7 +43,6 @@ export function useMetaMask() {
         }
       }
 
-      // Ponovo kreiraj provider nakon switch-a mreže
       const freshProvider = new BrowserProvider(window.ethereum)
       const accounts = await freshProvider.send('eth_requestAccounts', [])
       const addr = accounts[0] as string
@@ -54,10 +53,11 @@ export function useMetaMask() {
 
       return addr
     } catch (err: unknown) {
-      if ((err as { code?: number }).code === 4001) {
-        setError('Odbio si konekciju u MetaMask-u.')
+      const code = (err as { code?: unknown }).code
+      if (code === 4001 || code === 'ACTION_REJECTED') {
+        setError('Konekcija odbijena - odobri pristup u MetaMask-u.')
       } else {
-        setError(err instanceof Error ? err.message : 'Greška pri konekciji.')
+        setError('Greška pri konekciji. Pokušaj ponovo.')
       }
       return null
     } finally {
@@ -65,9 +65,11 @@ export function useMetaMask() {
     }
   }, [])
 
+  // onSubmitted se poziva čim korisnik potvrdi u MetaMask-u (prije potvrde bloka)
   const sendEth = useCallback(async (
     toAddress: string,
     usdAmount: number,
+    onSubmitted?: (txHash: string) => void,
   ): Promise<TransferResult> => {
     if (!window.ethereum) throw new Error('MetaMask nije instaliran.')
 
@@ -75,16 +77,21 @@ export function useMetaMask() {
     const signer = await provider.getSigner()
     const walletAddress = await signer.getAddress()
 
-    // Konvertujemo USD iznos u ETH (fiksni kurs za testnet)
-    const ethAmount = (usdAmount * USD_TO_ETH).toFixed(6)
+    const ethAmount = (usdAmount * USD_TO_ETH).toFixed(8)
 
     const tx = await signer.sendTransaction({
       to: toAddress,
       value: parseEther(ethAmount),
     })
 
+    // Odmah obavijesti komponentu da je tx poslan (MetaMask potvrdio)
+    onSubmitted?.(tx.hash)
+
+    // Čekaj 1 blok potvrde na Sepolia (~12 sekundi)
+    await tx.wait(1)
+
     return { txHash: tx.hash, walletAddress }
   }, [])
 
-  return { isInstalled, account, ethBalance, isConnecting, error, connect, sendEth }
+  return { isInstalled, account, ethBalance, isConnecting, error, connect, sendEth, USD_TO_ETH }
 }

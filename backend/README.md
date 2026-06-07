@@ -1,4 +1,4 @@
-# Shop — Backend
+# Shop - Backend
 
 ASP.NET Core 10 Web API sa CQRS/MediatR arhitekturom i PostgreSQL bazom.
 
@@ -14,7 +14,7 @@ ASP.NET Core 10 Web API sa CQRS/MediatR arhitekturom i PostgreSQL bazom.
 
 ```
 backend/
-├── Shop.Api/            # ASP.NET Core Web API — entry point, kontroleri, middleware
+├── Shop.Api/            # ASP.NET Core Web API - entry point, kontroleri, middleware
 ├── Shop.Application/    # CQRS handleri (MediatR), servisi, interfejsi
 ├── Shop.Domain/         # Domain entiteti, value objekti, domain eventi
 ├── Shop.Infrastructure/ # EF Core DbContext, PostgreSQL repozitorijumi
@@ -56,8 +56,8 @@ docker compose up --build
 ```
 
 Ovo pokreće:
-- `api` — backend na portu `5000`
-- `db` — PostgreSQL na portu `5432`
+- `api` - backend na portu `5000`
+- `db` - PostgreSQL na portu `5432`
 
 Za zaustavljanje:
 
@@ -75,11 +75,11 @@ docker compose down -v
 
 ### Automatska primjena
 
-Migracije se **automatski primjenjuju pri svakom pokretanju aplikacije** — nema potrebe da ih ručno pokrećeš za lokalni razvoj ili deployment. Seed podaci (admin korisnik i test proizvodi) se dodaju samo ako baza još uvijek prazna.
+Migracije se **automatski primjenjuju pri svakom pokretanju aplikacije** - nema potrebe da ih ručno pokrećeš za lokalni razvoj ili deployment. Seed podaci (admin korisnik i test proizvodi) se dodaju samo ako baza još uvijek prazna.
 
 ### Kada kreirati novu migraciju
 
-Novu migraciju treba kreirati kada se **promijeni model domene** — dodavanje entiteta, kolone, indeksa ili promjena ograničenja:
+Novu migraciju treba kreirati kada se **promijeni model domene** - dodavanje entiteta, kolone, indeksa ili promjena ograničenja:
 
 ```bash
 # Instalacija dotnet-ef alata (jednom, globalno)
@@ -143,5 +143,5 @@ dotnet test Shop.Tests.Integration
 
 | Varijabla | Opis | Default |
 |-----------|------|---------|
-| `ConnectionStrings__DefaultConnection` | PostgreSQL connection string | — |
+| `ConnectionStrings__DefaultConnection` | PostgreSQL connection string | - |
 | `ASPNETCORE_ENVIRONMENT` | `Development` / `Production` | `Production` |

@@ -1,4 +1,4 @@
-# Shop — Frontend
+# Shop - Frontend
 
 React 18 + TypeScript + Vite aplikacija za Shop platformu.
 
@@ -12,13 +12,13 @@ React 18 + TypeScript + Vite aplikacija za Shop platformu.
 
 ## Tehnologije
 
-- **Vite 5** — build alat i dev server
+- **Vite 5** - build alat i dev server
 - **React 18** + **TypeScript 5**
-- **React Router v6** — rutiranje
-- **TanStack Query v5** — server state management i API pozivi
-- **Axios** — HTTP klijent
-- **Tailwind CSS v3** — stilizacija
-- **Vitest v2** + **Testing Library** — testovi
+- **React Router v6** - rutiranje
+- **TanStack Query v5** - server state management i API pozivi
+- **Axios** - HTTP klijent
+- **Tailwind CSS v3** - stilizacija
+- **Vitest v2** + **Testing Library** - testovi
 
 ## Instalacija
 
@@ -42,10 +42,10 @@ Dev server automatski prosljeđuje `/api/*` zahtjeve na `http://localhost:5000`.
 ## Pokretanje testova
 
 ```bash
-# Watch mode — pokreće se pri svakom snimanju fajla (za razvoj)
+# Watch mode - pokreće se pri svakom snimanju fajla (za razvoj)
 npm test
 
-# Jednokratno pokretanje — kao na CI
+# Jednokratno pokretanje - kao na CI
 npm run test:run
 
 # Interaktivni UI u browseru
@@ -56,14 +56,14 @@ npm run test:ui
 
 | Fajl | Šta pokriva |
 |------|-------------|
-| `src/hooks/useDebounce.test.ts` | Debounce logika — timing, cancel međuvrijednosti |
+| `src/hooks/useDebounce.test.ts` | Debounce logika - timing, cancel međuvrijednosti |
 | `src/components/SearchBar.test.tsx` | Unos teksta, clear dugme |
 | `src/components/Pagination.test.tsx` | Render uslovi, disabled stanje, klikovi, ellipsis |
 | `src/pages/ProductsPage.test.tsx` | Prikaz proizvoda, debounced search, empty/error state, paginacija |
 
 ### Struktura testa
 
-Testovi koriste [Vitest](https://vitest.dev/) + [Testing Library](https://testing-library.com/). API pozivi se mockuju sa `vi.mock()` — nije potreban pokrenut backend.
+Testovi koriste [Vitest](https://vitest.dev/) + [Testing Library](https://testing-library.com/). API pozivi se mockuju sa `vi.mock()` - nije potreban pokrenut backend.
 
 ```bash
 # Pokretanje samo jednog fajla
