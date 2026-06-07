@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { getProducts } from '../api/products'
 import { deleteProduct } from '../api/adminProducts'
 import { useAuth } from '../context/AuthContext'
@@ -66,10 +66,13 @@ export function AdminProductsPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <span className="font-bold text-gray-900">🛒 Admin</span>
             <span className="text-gray-300">|</span>
-            <span className="text-sm text-gray-500">Artikli</span>
+            <span className="text-sm font-medium text-indigo-600">Artikli</span>
+            <Link to="/admin/orders" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              Porudžbine
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Pretraži artikle..." />
