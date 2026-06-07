@@ -1,12 +1,14 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCart, clearCart } from '../api/cart'
 import { useCart } from '../context/CartContext'
 import { CartDrawerItem } from './CartDrawerItem'
+import { CheckoutModal } from './CheckoutModal'
 
 export function CartDrawer() {
   const { isOpen, closeCart } = useCart()
   const queryClient = useQueryClient()
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
 
   const { data: cart, isLoading } = useQuery({
     queryKey: ['cart'],
@@ -21,10 +23,15 @@ export function CartDrawer() {
 
   useEffect(() => {
     if (!isOpen) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeCart()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !checkoutOpen && closeCart()
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [isOpen, closeCart])
+  }, [isOpen, closeCart, checkoutOpen])
+
+  function handleCheckoutSuccess() {
+    setCheckoutOpen(false)
+    closeCart()
+  }
 
   const itemCount = cart?.items.reduce((sum, i) => sum + i.quantity, 0) ?? 0
 
@@ -103,8 +110,8 @@ export function CartDrawer() {
             </div>
 
             <button
+              onClick={() => setCheckoutOpen(true)}
               className="w-full py-3 px-4 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 active:bg-indigo-800 transition-colors"
-              onClick={() => {/* checkout - tiket #24 */}}
             >
               Nastavi sa plaćanjem →
             </button>
@@ -119,6 +126,14 @@ export function CartDrawer() {
           </div>
         )}
       </aside>
+
+      {checkoutOpen && cart && (
+        <CheckoutModal
+          total={cart.total}
+          onClose={() => setCheckoutOpen(false)}
+          onSuccess={handleCheckoutSuccess}
+        />
+      )}
     </>
   )
 }
