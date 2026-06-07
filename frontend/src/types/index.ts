@@ -27,3 +27,24 @@ export interface Cart {
   items: CartItem[]
   total: number
 }
+
+export type OrderStatus = 'Pending' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Cancelled'
+
+export interface OrderItem {
+  id: string
+  productId: string
+  productName: string
+  unitPrice: number
+  quantity: number
+}
+
+export interface Order {
+  id: string
+  sessionId: string
+  status: OrderStatus
+  totalPrice: number
+  transactionHash: string
+  walletAddress: string
+  createdAt: string
+  items: OrderItem[]
+}

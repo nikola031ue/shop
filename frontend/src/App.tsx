@@ -8,6 +8,7 @@ import { LandingPage } from './pages/LandingPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { LoginPage } from './pages/LoginPage'
 import { AdminProductsPage } from './pages/AdminProductsPage'
+import { AdminOrdersPage } from './pages/AdminOrdersPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <AdminProductsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/orders"
+                element={
+                  <ProtectedRoute>
+                    <AdminOrdersPage />
                   </ProtectedRoute>
                 }
               />
