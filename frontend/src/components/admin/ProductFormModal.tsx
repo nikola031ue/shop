@@ -22,8 +22,10 @@ export function ProductFormModal({ product, onClose }: Props) {
   const [error, setError] = useState('')
 
   const mutation = useMutation({
-    mutationFn: (payload: ProductPayload) =>
-      isEdit ? updateProduct(product.id, payload) : createProduct(payload),
+    mutationFn: async (payload: ProductPayload) => {
+      if (isEdit) await updateProduct(product.id, payload)
+      else await createProduct(payload)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
