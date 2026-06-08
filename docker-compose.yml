@@ -8,9 +8,13 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=shopdb;Username=shop;Password=shop123
       - ASPNETCORE_ENVIRONMENT=Development
+      - OpenTelemetry__OtlpEndpoint=http://otel-collector:4317
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - observability
 
   db:
     image: postgres:16
@@ -30,3 +34,8 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  observability:
+    name: shop_observability
+    external: true
