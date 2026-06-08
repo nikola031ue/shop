@@ -5,7 +5,8 @@ using Shop.Domain.Entities;
 
 namespace Shop.Application.Orders.Commands.CreateOrder;
 
-public class CreateOrderCommandHandler(IShopDbContext db) : IRequestHandler<CreateOrderCommand, Guid?>
+public class CreateOrderCommandHandler(IShopDbContext db, IShopMetrics metrics)
+    : IRequestHandler<CreateOrderCommand, Guid?>
 {
     public async Task<Guid?> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -20,6 +21,9 @@ public class CreateOrderCommandHandler(IShopDbContext db) : IRequestHandler<Crea
         db.CartItems.RemoveRange(cartItems);
 
         await db.SaveChangesAsync(cancellationToken);
+
+        metrics.RecordOrderCreated(order.TotalPrice);
+
         return order.Id;
     }
 }

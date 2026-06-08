@@ -5,7 +5,8 @@ using Shop.Domain.Entities;
 
 namespace Shop.Application.Carts.Commands.AddCartItem;
 
-public class AddCartItemCommandHandler(IShopDbContext db) : IRequestHandler<AddCartItemCommand, Guid?>
+public class AddCartItemCommandHandler(IShopDbContext db, IShopMetrics metrics)
+    : IRequestHandler<AddCartItemCommand, Guid?>
 {
     public async Task<Guid?> Handle(AddCartItemCommand request, CancellationToken cancellationToken)
     {
@@ -27,12 +28,14 @@ public class AddCartItemCommandHandler(IShopDbContext db) : IRequestHandler<AddC
         {
             existing.UpdateQuantity(existing.Quantity + request.Quantity);
             await db.SaveChangesAsync(cancellationToken);
+            metrics.RecordCartItemAdded(request.Quantity);
             return existing.Id;
         }
 
         var cartItem = CartItem.Create(request.SessionId, product.Id, product.Name, product.Price, request.Quantity);
         db.CartItems.Add(cartItem);
         await db.SaveChangesAsync(cancellationToken);
+        metrics.RecordCartItemAdded(request.Quantity);
         return cartItem.Id;
     }
 }

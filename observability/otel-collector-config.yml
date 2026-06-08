@@ -1,0 +1,44 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+
+exporters:
+  # Metrike → Prometheus format (Prometheus scrape-uje ovaj endpoint)
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: shop
+
+  # Logovi → Loki
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+  # Trace-ovi → Tempo
+  otlp/tempo:
+    endpoint: http://tempo:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
+
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki]

@@ -2,6 +2,7 @@ using FluentAssertions;
 using Shop.Application.Orders.Commands.CreateOrder;
 using Shop.Domain.Entities;
 using Shop.Domain.Enums;
+using Shop.Tests.Unit.Infrastructure;
 using Shop.Tests.Unit.Products;
 
 namespace Shop.Tests.Unit.Orders.Commands;
@@ -12,7 +13,7 @@ public class CreateOrderCommandHandlerTests
     public async Task Handle_ShouldReturnNull_WhenCartDoesNotExist()
     {
         using var db = DbContextFactory.Create();
-        var handler = new CreateOrderCommandHandler(db);
+        var handler = new CreateOrderCommandHandler(db, NullShopMetrics.Instance);
 
         var result = await handler.Handle(
             new CreateOrderCommand(Guid.NewGuid(), "0xabc", "0xwallet"), CancellationToken.None);
@@ -28,7 +29,7 @@ public class CreateOrderCommandHandlerTests
         db.Carts.Add(Cart.Create(sessionId));
         await db.SaveChangesAsync();
 
-        var handler = new CreateOrderCommandHandler(db);
+        var handler = new CreateOrderCommandHandler(db, NullShopMetrics.Instance);
         var result = await handler.Handle(
             new CreateOrderCommand(sessionId, "0xabc", "0xwallet"), CancellationToken.None);
 
@@ -46,7 +47,7 @@ public class CreateOrderCommandHandlerTests
         db.Carts.Add(cart);
         await db.SaveChangesAsync();
 
-        var handler = new CreateOrderCommandHandler(db);
+        var handler = new CreateOrderCommandHandler(db, NullShopMetrics.Instance);
         var orderId = await handler.Handle(
             new CreateOrderCommand(sessionId, "0xabc123", "0xwallet456"), CancellationToken.None);
 
@@ -68,7 +69,7 @@ public class CreateOrderCommandHandlerTests
         db.Carts.Add(cart);
         await db.SaveChangesAsync();
 
-        var handler = new CreateOrderCommandHandler(db);
+        var handler = new CreateOrderCommandHandler(db, NullShopMetrics.Instance);
         await handler.Handle(
             new CreateOrderCommand(sessionId, "0xtx", "0xaddr"), CancellationToken.None);
 

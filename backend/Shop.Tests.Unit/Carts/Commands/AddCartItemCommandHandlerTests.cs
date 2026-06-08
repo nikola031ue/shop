@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Shop.Application.Carts.Commands.AddCartItem;
 using Shop.Domain.Entities;
+using Shop.Tests.Unit.Infrastructure;
 using Shop.Tests.Unit.Products;
 
 namespace Shop.Tests.Unit.Carts.Commands;
@@ -11,7 +12,7 @@ public class AddCartItemCommandHandlerTests
     public async Task Handle_ShouldReturnNull_WhenProductNotFound()
     {
         using var db = DbContextFactory.Create();
-        var handler = new AddCartItemCommandHandler(db);
+        var handler = new AddCartItemCommandHandler(db, NullShopMetrics.Instance);
 
         var result = await handler.Handle(new AddCartItemCommand(Guid.NewGuid(), Guid.NewGuid(), 1), CancellationToken.None);
 
@@ -27,7 +28,7 @@ public class AddCartItemCommandHandlerTests
         await db.SaveChangesAsync();
 
         var sessionId = Guid.NewGuid();
-        var handler = new AddCartItemCommandHandler(db);
+        var handler = new AddCartItemCommandHandler(db, NullShopMetrics.Instance);
 
         var cartItemId = await handler.Handle(new AddCartItemCommand(sessionId, product.Id, 2), CancellationToken.None);
 
@@ -49,7 +50,7 @@ public class AddCartItemCommandHandlerTests
         db.Carts.Add(cart);
         await db.SaveChangesAsync();
 
-        var handler = new AddCartItemCommandHandler(db);
+        var handler = new AddCartItemCommandHandler(db, NullShopMetrics.Instance);
         await handler.Handle(new AddCartItemCommand(sessionId, product.Id, 3), CancellationToken.None);
 
         db.CartItems.Single().Quantity.Should().Be(4);
