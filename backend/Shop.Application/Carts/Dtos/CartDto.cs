@@ -1,7 +1,7 @@
 namespace Shop.Application.Carts.Dtos;
 
 public record CartItemDto(
-    Guid Id,
+    Guid CartItemId,
     Guid ProductId,
     string ProductName,
     decimal UnitPrice,
